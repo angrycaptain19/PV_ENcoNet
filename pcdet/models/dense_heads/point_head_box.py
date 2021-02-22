@@ -50,13 +50,11 @@ class PointHeadBox(PointHeadTemplate):
         extend_gt_boxes = box_utils.enlarge_box3d(
             gt_boxes.view(-1, gt_boxes.shape[-1]), extra_width=self.model_cfg.TARGET_CONFIG.GT_EXTRA_WIDTH
         ).view(batch_size, -1, gt_boxes.shape[-1])
-        targets_dict = self.assign_stack_targets(
+        return self.assign_stack_targets(
             points=point_coords, gt_boxes=gt_boxes, extend_gt_boxes=extend_gt_boxes,
             set_ignore_flag=True, use_ball_constraint=False,
             ret_part_labels=False, ret_box_labels=True
         )
-
-        return targets_dict
 
     def get_loss(self, tb_dict=None):
         tb_dict = {} if tb_dict is None else tb_dict

@@ -28,7 +28,7 @@ class PartA2FCHead(RoIHeadTemplate):
         shared_fc_list = []
         pool_size = self.model_cfg.ROI_AWARE_POOL.POOL_SIZE
         pre_channel = self.model_cfg.ROI_AWARE_POOL.NUM_FEATURES * pool_size * pool_size * pool_size
-        for k in range(0, self.model_cfg.SHARED_FC.__len__()):
+        for k in range(self.model_cfg.SHARED_FC.__len__()):
             shared_fc_list.extend([
                 nn.Conv1d(pre_channel, self.model_cfg.SHARED_FC[k], kernel_size=1, bias=False),
                 nn.BatchNorm1d(self.model_cfg.SHARED_FC[k]),
@@ -59,15 +59,15 @@ class PartA2FCHead(RoIHeadTemplate):
     def init_weights(self, weight_init='xavier'):
         if weight_init == 'kaiming':
             init_func = nn.init.kaiming_normal_
-        elif weight_init == 'xavier':
-            init_func = nn.init.xavier_normal_
         elif weight_init == 'normal':
             init_func = nn.init.normal_
+        elif weight_init == 'xavier':
+            init_func = nn.init.xavier_normal_
         else:
             raise NotImplementedError
 
         for m in self.modules():
-            if isinstance(m, nn.Conv2d) or isinstance(m, nn.Conv1d):
+            if isinstance(m, (nn.Conv2d, nn.Conv1d)):
                 if weight_init == 'normal':
                     init_func(m.weight, mean=0, std=0.001)
                 else:

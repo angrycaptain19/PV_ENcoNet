@@ -7,10 +7,9 @@ from .detectors import build_detector
 
 
 def build_network(model_cfg, num_class, dataset):
-    model = build_detector(
+    return build_detector(
         model_cfg=model_cfg, num_class=num_class, dataset=dataset
     )
-    return model
 
 
 def load_data_to_gpu(batch_dict):

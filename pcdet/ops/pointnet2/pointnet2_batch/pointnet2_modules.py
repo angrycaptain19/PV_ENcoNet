@@ -170,5 +170,4 @@ class PointnetFPModule(nn.Module):
         return new_features.squeeze(-1)
 
 
-if __name__ == "__main__":
-    pass
+pass

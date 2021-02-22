@@ -17,20 +17,21 @@ class DataAugmentor(object):
             else augmentor_configs.AUG_CONFIG_LIST
 
         for cur_cfg in aug_config_list:
-            if not isinstance(augmentor_configs, list):
-                if cur_cfg.NAME in augmentor_configs.DISABLE_AUG_LIST:
-                    continue
+            if (
+                not isinstance(augmentor_configs, list)
+                and cur_cfg.NAME in augmentor_configs.DISABLE_AUG_LIST
+            ):
+                continue
             cur_augmentor = getattr(self, cur_cfg.NAME)(config=cur_cfg)
             self.data_augmentor_queue.append(cur_augmentor)
 
     def gt_sampling(self, config=None):
-        db_sampler = database_sampler.DataBaseSampler(
+        return database_sampler.DataBaseSampler(
             root_path=self.root_path,
             sampler_cfg=config,
             class_names=self.class_names,
             logger=self.logger
         )
-        return db_sampler
 
     def __getstate__(self):
         d = dict(self.__dict__)

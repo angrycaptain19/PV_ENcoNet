@@ -14,7 +14,7 @@ def train_one_epoch(model, optimizer, train_loader, model_func, lr_scheduler, ac
     if rank == 0:
         pbar = tqdm.tqdm(total=total_it_each_epoch, leave=leave_pbar, desc='train', dynamic_ncols=True)
 
-    for cur_it in range(total_it_each_epoch):
+    for _ in range(total_it_each_epoch):
         try:
             batch = next(dataloader_iter)
         except StopIteration:
@@ -101,7 +101,7 @@ def train_model(model, optimizer, train_loader, model_func, lr_scheduler, optim_
                 ckpt_list.sort(key=os.path.getmtime)
 
                 if ckpt_list.__len__() >= max_ckpt_save_num:
-                    for cur_file_idx in range(0, len(ckpt_list) - max_ckpt_save_num + 1):
+                    for cur_file_idx in range(len(ckpt_list) - max_ckpt_save_num + 1):
                         os.remove(ckpt_list[cur_file_idx])
 
                 ckpt_name = ckpt_save_dir / ('checkpoint_epoch_%d' % trained_epoch)
@@ -137,11 +137,5 @@ def checkpoint_state(model=None, optimizer=None, epoch=None, it=None):
 
 
 def save_checkpoint(state, filename='checkpoint'):
-    if False and 'optimizer_state' in state:
-        optimizer_state = state['optimizer_state']
-        state.pop('optimizer_state', None)
-        optimizer_filename = '{}_optim.pth'.format(filename)
-        torch.save({'optimizer_state': optimizer_state}, optimizer_filename)
-
     filename = '{}.pth'.format(filename)
     torch.save(state, filename)

@@ -24,12 +24,12 @@ def limit_period(val, offset=0.5, period=np.pi):
 
 
 def drop_info_with_name(info, name):
-    ret_info = {}
     keep_indices = [i for i, x in enumerate(info['name']) if x != name]
-    for key in info.keys():
-        if key != 'gt_boxes_lidar':
-            ret_info[key] = info[key][keep_indices]
-    return ret_info
+    return {
+        key: info[key][keep_indices]
+        for key in info.keys()
+        if key != 'gt_boxes_lidar'
+    }
 
 
 def rotate_points_along_z(points, angle):
@@ -58,9 +58,8 @@ def rotate_points_along_z(points, angle):
 
 
 def mask_points_by_range(points, limit_range):
-    mask = (points[:, 0] >= limit_range[0]) & (points[:, 0] <= limit_range[3]) \
+    return (points[:, 0] >= limit_range[0]) & (points[:, 0] <= limit_range[3]) \
            & (points[:, 1] >= limit_range[1]) & (points[:, 1] <= limit_range[4])
-    return mask
 
 
 def get_voxel_centers(voxel_coords, downsample_times, voxel_size, point_cloud_range):
@@ -159,10 +158,7 @@ def get_dist_info():
     if torch.__version__ < '1.0':
         initialized = dist._initialized
     else:
-        if dist.is_available():
-            initialized = dist.is_initialized()
-        else:
-            initialized = False
+        initialized = dist.is_initialized() if dist.is_available() else False
     if initialized:
         rank = dist.get_rank()
         world_size = dist.get_world_size()

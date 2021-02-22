@@ -155,13 +155,14 @@ def filter_kitti_anno(image_anno,
                       dontcare_iou=None):
     if not isinstance(used_classes, (list, tuple)):
         used_classes = [used_classes]
-    img_filtered_annotations = {}
     relevant_annotation_indices = [
         i for i, x in enumerate(image_anno['name']) if x in used_classes
     ]
-    for key in image_anno.keys():
-        img_filtered_annotations[key] = (
-            image_anno[key][relevant_annotation_indices])
+    img_filtered_annotations = {
+        key: image_anno[key][relevant_annotation_indices]
+        for key in image_anno.keys()
+    }
+
     if used_difficulty is not None:
         relevant_annotation_indices = [
             i for i, x in enumerate(img_filtered_annotations['difficulty'])
@@ -191,13 +192,13 @@ def filter_kitti_anno(image_anno,
 def filter_annos_low_score(image_annos, thresh):
     new_image_annos = []
     for anno in image_annos:
-        img_filtered_annotations = {}
         relevant_annotation_indices = [
             i for i, s in enumerate(anno['score']) if s >= thresh
         ]
-        for key in anno.keys():
-            img_filtered_annotations[key] = (
-                anno[key][relevant_annotation_indices])
+        img_filtered_annotations = {
+            key: anno[key][relevant_annotation_indices] for key in anno.keys()
+        }
+
         new_image_annos.append(img_filtered_annotations)
     return new_image_annos
 
@@ -265,15 +266,13 @@ def add_difficulty_to_annos(info):
     easy_mask = np.ones((len(dims), ), dtype=np.bool)
     moderate_mask = np.ones((len(dims), ), dtype=np.bool)
     hard_mask = np.ones((len(dims), ), dtype=np.bool)
-    i = 0
-    for h, o, t in zip(height, occlusion, truncation):
+    for i, (h, o, t) in enumerate(zip(height, occlusion, truncation)):
         if o > max_occlusion[0] or h <= min_height[0] or t > max_trunc[0]:
             easy_mask[i] = False
         if o > max_occlusion[1] or h <= min_height[1] or t > max_trunc[1]:
             moderate_mask[i] = False
         if o > max_occlusion[2] or h <= min_height[2] or t > max_trunc[2]:
             hard_mask[i] = False
-        i += 1
     is_easy = easy_mask
     is_moderate = np.logical_xor(easy_mask, moderate_mask)
     is_hard = np.logical_xor(hard_mask, moderate_mask)

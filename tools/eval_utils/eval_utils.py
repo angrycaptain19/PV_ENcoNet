@@ -83,7 +83,7 @@ def eval_one_epoch(cfg, model, dataloader, epoch_id, logger, dist_test=False, sa
     model.eval()
     FPS = []
 
-    for i in range(0,1):
+    for i in range(1):
 
         if cfg.LOCAL_RANK == 0:
             progress_bar = tqdm.tqdm(total=len(dataloader), leave=True, desc='eval', dynamic_ncols=True)
@@ -173,9 +173,7 @@ def eval_one_epoch(cfg, model, dataloader, epoch_id, logger, dist_test=False, sa
         ret_dict['recall/roi_%s' % str(cur_thresh)] = cur_roi_recall
         ret_dict['recall/rcnn_%s' % str(cur_thresh)] = cur_rcnn_recall
 
-    total_pred_objects = 0
-    for anno in det_annos:
-        total_pred_objects += anno['name'].__len__()
+    total_pred_objects = sum(anno['name'].__len__() for anno in det_annos)
     logger.info('Average predicted number of objects(%d samples): %.3f'
                 % (len(det_annos), total_pred_objects / max(1, len(det_annos))))
 
@@ -195,5 +193,4 @@ def eval_one_epoch(cfg, model, dataloader, epoch_id, logger, dist_test=False, sa
     logger.info('****************Evaluation done.*****************')
     return ret_dict
 
-if __name__ == '__main__':
-    pass
+pass

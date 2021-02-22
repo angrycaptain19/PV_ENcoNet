@@ -36,8 +36,12 @@ def bilinear_interpolate_torch(im, x, y):
     wb = (x1.type_as(x) - x) * (y - y0.type_as(y))
     wc = (x - x0.type_as(x)) * (y1.type_as(y) - y)
     wd = (x - x0.type_as(x)) * (y - y0.type_as(y))
-    ans = torch.t((torch.t(Ia) * wa)) + torch.t(torch.t(Ib) * wb) + torch.t(torch.t(Ic) * wc) + torch.t(torch.t(Id) * wd)
-    return ans
+    return (
+        torch.t((torch.t(Ia) * wa))
+        + torch.t(torch.t(Ib) * wb)
+        + torch.t(torch.t(Ic) * wc)
+        + torch.t(torch.t(Id) * wd)
+    )
 
 
 class VoxelSetAbstraction(nn.Module):
@@ -89,7 +93,7 @@ class VoxelSetAbstraction(nn.Module):
                 use_xyz=True,
                 pool_method='max_pool'
             )
-            c_in += sum([x[-1] for x in mlps])
+            c_in += sum(x[-1] for x in mlps)
 
         self.vsa_point_feature_fusion = nn.Sequential(
             nn.Linear(c_in, self.model_cfg.NUM_OUTPUT_FEATURES, bias=False),
@@ -135,21 +139,17 @@ class VoxelSetAbstraction(nn.Module):
         for bs_idx in range(batch_size):
             bs_mask = (batch_indices == bs_idx)
             sampled_points = src_points[bs_mask].unsqueeze(dim=0)  # (1, N, 3)
-            if self.model_cfg.SAMPLE_METHOD == 'FPS':
-                cur_pt_idxs = pointnet2_stack_utils.furthest_point_sample(
-                    sampled_points[:, :, 0:3].contiguous(), self.model_cfg.NUM_KEYPOINTS
-                ).long()
-
-                if sampled_points.shape[1] < self.model_cfg.NUM_KEYPOINTS:
-                    empty_num = self.model_cfg.NUM_KEYPOINTS - sampled_points.shape[1]
-                    cur_pt_idxs[0, -empty_num:] = cur_pt_idxs[0, :empty_num]
-
-                keypoints = sampled_points[0][cur_pt_idxs[0]].unsqueeze(dim=0)
-
-            elif self.model_cfg.SAMPLE_METHOD == 'FastFPS':
+            if self.model_cfg.SAMPLE_METHOD != 'FPS':
                 raise NotImplementedError
-            else:
-                raise NotImplementedError
+            cur_pt_idxs = pointnet2_stack_utils.furthest_point_sample(
+                sampled_points[:, :, 0:3].contiguous(), self.model_cfg.NUM_KEYPOINTS
+            ).long()
+
+            if sampled_points.shape[1] < self.model_cfg.NUM_KEYPOINTS:
+                empty_num = self.model_cfg.NUM_KEYPOINTS - sampled_points.shape[1]
+                cur_pt_idxs[0, -empty_num:] = cur_pt_idxs[0, :empty_num]
+
+            keypoints = sampled_points[0][cur_pt_idxs[0]].unsqueeze(dim=0)
 
             keypoints_list.append(keypoints)
 

@@ -11,7 +11,7 @@ seq_frame_count = {0: 154, 1: 447, 2: 233, 3: 144, 4: 314, 5: 297, 6: 270, 7: 80
 def get_sequece_frame(velodyne_path):
     ## cal each sequence's frame count ##
     frame_count = {}
-    for seq in range(0,21):
+    for seq in range(21):
         print(seq)
         velodyne_path_seq = os.path.join(velodyne_path,str(seq).zfill(4))
         #_,_,files = os.walk(velodyne_path_seq)
@@ -29,7 +29,7 @@ def copy_file(source,desti,type,seq_frame_count):
     index = 0
     if not os.path.exists(desti):
         os.mkdir(desti)
-    for seq in range(0,21):
+    for seq in range(21):
         print(seq)
         f_count = seq_frame_count[seq]
         source_seq = os.path.join(source,str(seq).zfill(4))
@@ -50,7 +50,7 @@ def copy_file_label(source,desti,seq_frame_count):
     if not os.path.exists(desti):
         os.mkdir(desti)
     seq_idx = 0
-    for seq in range(0, 21):
+    for seq in range(21):
         source_seq = os.path.join(source,str(seq).zfill(4)+'.txt')
         f_count = seq_frame_count[seq]
         detection_dict = {} # frame_idx : [obj1_labels,obj2_labels,...]有效位数为2位 int:list
@@ -90,7 +90,7 @@ def copy_file_calib(source,desti,seq_frame_count):
     if not os.path.exists(desti):
         os.mkdir(desti)
     seq_idx = 0
-    for seq in range(0, 21):
+    for seq in range(21):
         f_count = seq_frame_count[seq]
         source_seq = os.path.join(source, str(seq).zfill(4)+'.txt')
         for idx in range(seq_idx,seq_idx+f_count):
@@ -103,18 +103,17 @@ def create_val_idx(root_dir,seq_frame_count):
     if not os.path.exists(desti):
         os.mkdir(desti)
     seq_idx = 0
-    for seq in range(0, 21):
+    for seq in range(21):
         val_seq = os.path.join(root_dir, 'ImageSets', str(seq).zfill(2))
         if not os.path.exists(val_seq):
             os.mkdir(val_seq)
         val_seq = os.path.join(val_seq, 'val.txt')
         f_count = seq_frame_count[seq]
 
-        val = open(val_seq,'w')
-        for idx in range(seq_idx,seq_idx+f_count):
-            idx = str(idx).zfill(6)
-            val.write(idx+'\n')
-        val.close()
+        with open(val_seq,'w') as val:
+            for idx in range(seq_idx,seq_idx+f_count):
+                idx = str(idx).zfill(6)
+                val.write(idx+'\n')
         seq_idx += f_count
         print('seq:',seq,'over')
 

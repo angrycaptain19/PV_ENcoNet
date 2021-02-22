@@ -42,7 +42,7 @@ def build_scheduler(optimizer, total_iters_each_epoch, total_epochs, last_epoch,
         cur_decay = 1
         for decay_step in decay_steps:
             if cur_epoch >= decay_step:
-                cur_decay = cur_decay * optim_cfg.LR_DECAY
+                cur_decay *= optim_cfg.LR_DECAY
         return max(cur_decay, optim_cfg.LR_CLIP / optim_cfg.LR)
 
     lr_warmup_scheduler = None

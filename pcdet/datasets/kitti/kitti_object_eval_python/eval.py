@@ -14,10 +14,7 @@ def get_thresholds(scores: np.ndarray, num_gt, num_sample_pts=41):
     thresholds = []
     for i, score in enumerate(scores):
         l_recall = (i + 1) / num_gt
-        if i < (len(scores) - 1):
-            r_recall = (i + 2) / num_gt
-        else:
-            r_recall = l_recall
+        r_recall = (i + 2) / num_gt if i < (len(scores) - 1) else l_recall
         if (((r_recall - current_recall) < (current_recall - l_recall))
                 and (i < (len(scores) - 1))):
             continue
@@ -60,7 +57,7 @@ def clean_data(gt_anno, dt_anno, current_class, difficulty):
         if valid_class == 1 and not ignore:
             ignored_gt.append(0)
             num_valid_gt += 1
-        elif (valid_class == 0 or (ignore and (valid_class == 1))):
+        elif valid_class in [0, 1]:
             ignored_gt.append(1)
         else:
             ignored_gt.append(-1)
@@ -68,10 +65,7 @@ def clean_data(gt_anno, dt_anno, current_class, difficulty):
         if gt_anno["name"][i] == "DontCare":
             dc_bboxes.append(gt_anno["bbox"][i])
     for i in range(num_dt):
-        if (dt_anno["name"][i].lower() == current_cls_name):
-            valid_class = 1
-        else:
-            valid_class = -1
+        valid_class = 1 if (dt_anno["name"][i].lower() == current_cls_name) else -1
         height = abs(dt_anno["bbox"][i, 3] - dt_anno["bbox"][i, 1])
         if height < MIN_HEIGHT[difficulty]:
             ignored_dt.append(1)
@@ -114,8 +108,7 @@ def image_box_overlap(boxes, query_boxes, criterion=-1):
 
 
 def bev_box_overlap(boxes, qboxes, criterion=-1):
-    riou = rotate_iou_gpu_eval(boxes, qboxes, criterion)
-    return riou
+    return rotate_iou_gpu_eval(boxes, qboxes, criterion)
 
 
 @numba.jit(nopython=True, parallel=True)
@@ -252,7 +245,7 @@ def compute_statistics_jit(overlaps,
                 for j in range(det_size):
                     if (assigned_detection[j]):
                         continue
-                    if (ignored_det[j] == -1 or ignored_det[j] == 1):
+                    if ignored_det[j] in [-1, 1]:
                         continue
                     if (ignored_threshold[j]):
                         continue
@@ -546,25 +539,20 @@ def eval_class(gt_annos,
                     recall[m, l, k, i] = np.max(recall[m, l, k, i:], axis=-1)
                     if compute_aos:
                         aos[m, l, k, i] = np.max(aos[m, l, k, i:], axis=-1)
-    ret_dict = {
+    return {
         "recall": recall,
         "precision": precision,
         "orientation": aos,
     }
-    return ret_dict
 
 
 def get_mAP(prec):
-    sums = 0
-    for i in range(0, prec.shape[-1], 4):
-        sums = sums + prec[..., i]
+    sums = sum(prec[..., i] for i in range(0, prec.shape[-1], 4))
     return sums / 11 * 100
 
 
 def get_mAP_R40(prec):
-    sums = 0
-    for i in range(1, prec.shape[-1]):
-        sums = sums + prec[..., i]
+    sums = sum(prec[..., i] for i in range(1, prec.shape[-1]))
     return sums / 40 * 100
 
 

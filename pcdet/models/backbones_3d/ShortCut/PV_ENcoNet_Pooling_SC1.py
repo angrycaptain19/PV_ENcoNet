@@ -19,13 +19,11 @@ def post_act_block(in_channels, out_channels, kernel_size, indice_key=None, stri
     else:
         raise NotImplementedError
 
-    m = spconv.SparseSequential(
+    return spconv.SparseSequential(
         conv,
         norm_fn(out_channels),
         nn.ReLU(),
     )
-
-    return m
 
 class SharedMLP(nn.Module):
     def __init__(

@@ -260,7 +260,3 @@ class ThreeInterpolate(Function):
 
 
 three_interpolate = ThreeInterpolate.apply
-
-
-if __name__ == '__main__':
-    pass

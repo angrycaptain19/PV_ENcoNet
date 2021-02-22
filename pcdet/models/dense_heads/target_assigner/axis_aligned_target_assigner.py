@@ -120,13 +120,12 @@ class AxisAlignedTargetAssigner(object):
 
         cls_labels = torch.stack(cls_labels, dim=0)
         reg_weights = torch.stack(reg_weights, dim=0)
-        all_targets_dict = {
+        return {
             'box_cls_labels': cls_labels,
             'box_reg_targets': bbox_targets,
             'reg_weights': reg_weights
 
         }
-        return all_targets_dict
 
     def assign_targets_single(self, anchors,
                          gt_boxes,
@@ -205,9 +204,8 @@ class AxisAlignedTargetAssigner(object):
         else:
             reg_weights[labels > 0] = 1.0
 
-        ret_dict = {
+        return {
             'box_cls_labels': labels,
             'box_reg_targets': bbox_targets,
             'reg_weights': reg_weights,
         }
-        return ret_dict
