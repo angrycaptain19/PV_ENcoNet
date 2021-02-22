@@ -38,22 +38,21 @@ def get_master(layer_groups, flat_master: bool = False):
                 master_params.append([mp])
             else:
                 master_params.append([])
-        return model_params, master_params
     else:
         master_params = [[param.clone().float().detach() for param in lg] for lg in model_params]
         for mp in master_params:
             for param in mp: param.requires_grad = True
-        return model_params, master_params
+
+    return model_params, master_params
 
 
 def model_g2master_g(model_params, master_params, flat_master: bool = False) -> None:
     "Copy the `model_params` gradients to `master_params` for the optimizer step."
-    if flat_master:
-        for model_group, master_group in zip(model_params, master_params):
+    for model_group, master_group in zip(model_params, master_params):
+        if flat_master:
             if len(master_group) != 0:
                 master_group[0].grad.data.copy_(parameters_to_vector([p.grad.data.float() for p in model_group]))
-    else:
-        for model_group, master_group in zip(model_params, master_params):
+        else:
             for model, master in zip(model_group, master_group):
                 if model.grad is not None:
                     if master.grad is None: master.grad = master.data.new(*master.data.size())
@@ -64,13 +63,12 @@ def model_g2master_g(model_params, master_params, flat_master: bool = False) -> 
 
 def master2model(model_params, master_params, flat_master: bool = False) -> None:
     "Copy `master_params` to `model_params`."
-    if flat_master:
-        for model_group, master_group in zip(model_params, master_params):
+    for model_group, master_group in zip(model_params, master_params):
+        if flat_master:
             if len(model_group) != 0:
                 for model, master in zip(model_group, _unflatten_dense_tensors(master_group[0].data, model_group)):
                     model.data.copy_(master)
-    else:
-        for model_group, master_group in zip(model_params, master_params):
+        else:
             for model, master in zip(model_group, master_group): model.data.copy_(master.data)
 
 
@@ -78,9 +76,7 @@ def listify(p=None, q=None):
     "Make `p` listy and the same length as `q`."
     if p is None:
         p = []
-    elif isinstance(p, str):
-        p = [p]
-    elif not isinstance(p, Iterable):
+    elif isinstance(p, str) or not isinstance(p, Iterable):
         p = [p]
     n = q if type(q) == int else len(p) if q is None else len(q)
     if len(p) == 1: p = p * n
@@ -90,8 +86,7 @@ def listify(p=None, q=None):
 
 def trainable_params(m: nn.Module):
     "Return list of trainable params in `m`."
-    res = filter(lambda p: p.requires_grad, m.parameters())
-    return res
+    return filter(lambda p: p.requires_grad, m.parameters())
 
 
 def is_tuple(x) -> bool: return isinstance(x, tuple)

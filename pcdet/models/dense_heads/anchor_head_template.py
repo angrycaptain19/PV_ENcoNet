@@ -94,10 +94,9 @@ class AnchorHeadTemplate(nn.Module):
         Returns:
 
         """
-        targets_dict = self.target_assigner.assign_targets(
+        return self.target_assigner.assign_targets(
             self.anchors, gt_boxes
         )
-        return targets_dict
 
     def get_cls_layer_loss(self):
         cls_preds = self.forward_ret_dict['cls_preds']

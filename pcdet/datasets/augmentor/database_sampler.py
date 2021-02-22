@@ -50,12 +50,12 @@ class DataBaseSampler(object):
     def filter_by_difficulty(self, db_infos, removed_difficulty):
         new_db_infos = {}
         for key, dinfos in db_infos.items():
-            pre_len = len(dinfos)
             new_db_infos[key] = [
                 info for info in dinfos
                 if info['difficulty'] not in removed_difficulty
             ]
             if self.logger is not None:
+                pre_len = len(dinfos)
                 self.logger.info('Database filter by difficulty %s: %d => %d' % (key, pre_len, len(new_db_infos[key])))
         return new_db_infos
 
@@ -64,10 +64,11 @@ class DataBaseSampler(object):
             name, min_num = name_num.split(':')
             min_num = int(min_num)
             if min_num > 0 and name in db_infos.keys():
-                filtered_infos = []
-                for info in db_infos[name]:
-                    if info['num_points_in_gt'] >= min_num:
-                        filtered_infos.append(info)
+                filtered_infos = [
+                    info
+                    for info in db_infos[name]
+                    if info['num_points_in_gt'] >= min_num
+                ]
 
                 if self.logger is not None:
                     self.logger.info('Database filter by min points %s: %d => %d' %

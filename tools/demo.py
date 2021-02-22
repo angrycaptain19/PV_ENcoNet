@@ -81,8 +81,7 @@ class DemoDataset(DatasetTemplate):
         if not lidar_file.exists():
             print(lidar_file)
         assert lidar_file.exists()
-        points_fov = np.load(str(lidar_file))
-        return points_fov
+        return np.load(str(lidar_file))
 
     def get_calib(self, idx):
         calib_file = self.data_root_path / 'calib' / ('%s.txt' % str(idx).zfill(6))
@@ -108,9 +107,7 @@ class DemoDataset(DatasetTemplate):
         val_flag_1 = np.logical_and(pts_img[:, 0] >= 0, pts_img[:, 0] < img_shape[1])
         val_flag_2 = np.logical_and(pts_img[:, 1] >= 0, pts_img[:, 1] < img_shape[0])
         val_flag_merge = np.logical_and(val_flag_1, val_flag_2)
-        pts_valid_flag = np.logical_and(val_flag_merge, pts_rect_depth >= 0)
-
-        return pts_valid_flag
+        return np.logical_and(val_flag_merge, pts_rect_depth >= 0)
 
     def __len__(self):
         return len(self.sample_file_list)
@@ -147,9 +144,7 @@ class DemoDataset(DatasetTemplate):
             'calib': calib,
             'raw_points': raw_points_fov
         }
-        data_dict = self.prepare_data(data_dict=input_dict)
-
-        return data_dict
+        return self.prepare_data(data_dict=input_dict)
 
 
 def parse_config():

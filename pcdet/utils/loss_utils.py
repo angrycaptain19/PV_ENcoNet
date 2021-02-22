@@ -37,9 +37,8 @@ class SigmoidFocalClassificationLoss(nn.Module):
             loss: (B, #anchors, #classes) float tensor.
                 Sigmoid cross entropy loss without reduction
         """
-        loss = torch.clamp(input, min=0) - input * target + \
+        return torch.clamp(input, min=0) - input * target + \
                torch.log1p(torch.exp(-torch.abs(input)))
-        return loss
 
     def forward(self, input: torch.Tensor, target: torch.Tensor, weights: torch.Tensor):
         """
@@ -99,12 +98,9 @@ class WeightedSmoothL1Loss(nn.Module):
     @staticmethod
     def smooth_l1_loss(diff, beta):
         if beta < 1e-5:
-            loss = torch.abs(diff)
-        else:
-            n = torch.abs(diff)
-            loss = torch.where(n < beta, 0.5 * n ** 2 / beta, n - 0.5 * beta)
-
-        return loss
+            return torch.abs(diff)
+        n = torch.abs(diff)
+        return torch.where(n < beta, 0.5 * n ** 2 / beta, n - 0.5 * beta)
 
     def forward(self, input: torch.Tensor, target: torch.Tensor, weights: torch.Tensor = None):
         """
@@ -203,8 +199,7 @@ class WeightedCrossEntropyLoss(nn.Module):
         """
         input = input.permute(0, 2, 1)
         target = target.argmax(dim=-1)
-        loss = F.cross_entropy(input, target, reduction='none') * weights
-        return loss
+        return F.cross_entropy(input, target, reduction='none') * weights
 
 
 def get_corner_loss_lidar(pred_bbox3d: torch.Tensor, gt_bbox3d: torch.Tensor):

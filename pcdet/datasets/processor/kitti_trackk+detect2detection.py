@@ -11,10 +11,7 @@ seq_frame_count = {0: 154, 1: 447, 2: 233, 3: 144, 4: 314, 5: 297, 6: 270, 7: 80
 def get_train_frame(path):
     f = open(path,'r')
     train_list = f.readlines()
-    train_list_result = []
-    for t in train_list:
-        train_list_result.append(int(t))
-    return train_list_result
+    return [int(t) for t in train_list]
 
 def get_velo_frame(velodyne_path):
     ## cal each sequence's frame count ##
@@ -64,18 +61,17 @@ def create_val_idx(root_dir,seq_frame_count):
     if not os.path.exists(desti):
         os.mkdir(desti)
     seq_idx = 0
-    for seq in range(0, 21):
+    for seq in range(21):
         val_seq = os.path.join(root_dir, 'ImageSets', str(seq).zfill(2))
         if not os.path.exists(val_seq):
             os.mkdir(val_seq)
         val_seq = os.path.join(val_seq, 'val.txt')
         f_count = seq_frame_count[seq]
 
-        val = open(val_seq,'w')
-        for idx in range(seq_idx,seq_idx+f_count):
-            idx = str(idx).zfill(6)
-            val.write(idx+'\n')
-        val.close()
+        with open(val_seq,'w') as val:
+            for idx in range(seq_idx,seq_idx+f_count):
+                idx = str(idx).zfill(6)
+                val.write(idx+'\n')
         seq_idx += f_count
         print('seq:',seq,'over')
 

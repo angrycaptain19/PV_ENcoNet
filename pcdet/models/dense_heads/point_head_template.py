@@ -21,22 +21,23 @@ class PointHeadTemplate(nn.Module):
             loss_utils.SigmoidFocalClassificationLoss(alpha=0.25, gamma=2.0)
         )
         reg_loss_type = losses_cfg.get('LOSS_REG', None)
-        if reg_loss_type == 'smooth-l1':
+        if reg_loss_type == 'smooth-l1' or reg_loss_type not in [
+            'l1',
+            'WeightedSmoothL1Loss',
+        ]:
             self.reg_loss_func = F.smooth_l1_loss
         elif reg_loss_type == 'l1':
             self.reg_loss_func = F.l1_loss
-        elif reg_loss_type == 'WeightedSmoothL1Loss':
+        else:
             self.reg_loss_func = loss_utils.WeightedSmoothL1Loss(
                 code_weights=losses_cfg.LOSS_WEIGHTS.get('code_weights', None)
             )
-        else:
-            self.reg_loss_func = F.smooth_l1_loss
 
     @staticmethod
     def make_fc_layers(fc_cfg, input_channels, output_channels):
         fc_layers = []
         c_in = input_channels
-        for k in range(0, fc_cfg.__len__()):
+        for k in range(fc_cfg.__len__()):
             fc_layers.extend([
                 nn.Linear(c_in, fc_cfg[k], bias=False),
                 nn.BatchNorm1d(fc_cfg[k]),
@@ -121,12 +122,11 @@ class PointHeadTemplate(nn.Module):
                 point_part_labels_single[fg_flag] = (transformed_points / gt_box_of_fg_points[:, 3:6]) + offset
                 point_part_labels[bs_mask] = point_part_labels_single
 
-        targets_dict = {
+        return {
             'point_cls_labels': point_cls_labels,
             'point_box_labels': point_box_labels,
             'point_part_labels': point_part_labels
         }
-        return targets_dict
 
     def get_cls_layer_loss(self, tb_dict=None):
         point_cls_labels = self.forward_ret_dict['point_cls_labels'].view(-1)

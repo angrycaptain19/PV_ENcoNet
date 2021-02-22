@@ -32,7 +32,7 @@ def CIEDE2000(Lab_1, Lab_2):
     #h1_[idx] = torch.atan2(b1_[idx], a1_[idx])
     '''
     idx = torch.where((a1_ < 0))
-    h1_[idx] = h1_[idx] + 2* math.pi
+    h1_[idx] += 2* math.pi
 
     idx = torch.where((b2_ == 0) & (a2_ == 0))
     h2_ = torch.atan2(b2_, a2_)
@@ -41,7 +41,7 @@ def CIEDE2000(Lab_1, Lab_2):
     #h2_[idx] = torch.atan2(b2_[idx], a2_[idx])
 
     idx = torch.where((a2_ < 0))
-    h2_[idx] = h2_[idx] + 2 * math.pi
+    h2_[idx] += 2 * math.pi
     #idx = torch.where((a2_ > 0))
     #h2_[idx] = torch.atan2(b2_[idx], a2_[idx])
 
@@ -53,9 +53,9 @@ def CIEDE2000(Lab_1, Lab_2):
     idx = torch.where((C1_ == 0) & (C2_ == 0))
     dh_[idx] = 0
     idx = torch.where((dh_ > math.pi))
-    dh_[idx] = dh_[idx] - 2* math.pi
+    dh_[idx] -= 2* math.pi
     idx = torch.where((dh_ < math.pi))
-    dh_[idx] = dh_[idx] + 2 * math.pi
+    dh_[idx] += 2 * math.pi
 
     dH_ = 2 * torch.sqrt(C1_ * C2_) * torch.sin(dh_ / 2)
 
@@ -136,7 +136,6 @@ def CIEDE1994(Lab_1, Lab_2):
     Ec = C12/(Kc*Sc)
     Eh = H12/(Kh*Sh)
 
-    E = torch.sqrt(El**2 + Ec**2 + Eh**2)
     # end = time.time()
     #print('CIEDE2000 :', end - start)
-    return  E
+    return torch.sqrt(El**2 + Ec**2 + Eh**2)

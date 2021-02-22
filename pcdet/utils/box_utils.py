@@ -255,8 +255,9 @@ def boxes_iou_normal(boxes_a, boxes_b):
     area_a = (boxes_a[:, 2] - boxes_a[:, 0]) * (boxes_a[:, 3] - boxes_a[:, 1])
     area_b = (boxes_b[:, 2] - boxes_b[:, 0]) * (boxes_b[:, 3] - boxes_b[:, 1])
     a_intersect_b = x_len * y_len
-    iou = a_intersect_b / torch.clamp_min(area_a[:, None] + area_b[None, :] - a_intersect_b, min=1e-6)
-    return iou
+    return a_intersect_b / torch.clamp_min(
+        area_a[:, None] + area_b[None, :] - a_intersect_b, min=1e-6
+    )
 
 
 def boxes3d_lidar_to_aligned_bev_boxes(boxes3d):
@@ -269,8 +270,10 @@ def boxes3d_lidar_to_aligned_bev_boxes(boxes3d):
     """
     rot_angle = common_utils.limit_period(boxes3d[:, 6], offset=0.5, period=np.pi).abs()
     choose_dims = torch.where(rot_angle[:, None] < np.pi / 4, boxes3d[:, [3, 4]], boxes3d[:, [4, 3]])
-    aligned_bev_boxes = torch.cat((boxes3d[:, 0:2] - choose_dims / 2, boxes3d[:, 0:2] + choose_dims / 2), dim=1)
-    return aligned_bev_boxes
+    return torch.cat(
+        (boxes3d[:, 0:2] - choose_dims / 2, boxes3d[:, 0:2] + choose_dims / 2),
+        dim=1,
+    )
 
 
 def boxes3d_nearest_bev_iou(boxes_a, boxes_b):

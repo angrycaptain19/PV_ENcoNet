@@ -168,13 +168,11 @@ def get_available_scenes(nusc):
             lidar_path, boxes, _ = nusc.get_sample_data(sd_rec['token'])
             if not Path(lidar_path).exists():
                 scene_not_exist = True
-                break
-            else:
-                break
-            # if not sd_rec['next'] == '':
-            #     sd_rec = nusc.get('sample_data', sd_rec['next'])
-            # else:
-            #     has_more_frames = False
+            break
+                    # if not sd_rec['next'] == '':
+                    #     sd_rec = nusc.get('sample_data', sd_rec['next'])
+                    # else:
+                    #     has_more_frames = False
         if scene_not_exist:
             continue
         available_scenes.append(scene)
@@ -297,7 +295,7 @@ def fill_trainval_infos(data_path, nusc, train_scenes, val_scenes, test=False, m
         sweeps = []
         while len(sweeps) < max_sweeps - 1:
             if curr_sd_rec['prev'] == '':
-                if len(sweeps) == 0:
+                if not sweeps:
                     sweep = {
                         'lidar_path': Path(ref_lidar_path).relative_to(data_path).__str__(),
                         'sample_data_token': curr_sd_rec['token'],

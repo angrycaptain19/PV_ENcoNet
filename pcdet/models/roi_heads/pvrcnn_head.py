@@ -23,11 +23,11 @@ class PVRCNNHead(RoIHeadTemplate):
         )
 
         GRID_SIZE = self.model_cfg.ROI_GRID_POOL.GRID_SIZE
-        c_out = sum([x[-1] for x in mlps])
+        c_out = sum(x[-1] for x in mlps)
         pre_channel = GRID_SIZE * GRID_SIZE * GRID_SIZE * c_out
 
         shared_fc_list = []
-        for k in range(0, self.model_cfg.SHARED_FC.__len__()):
+        for k in range(self.model_cfg.SHARED_FC.__len__()):
             shared_fc_list.extend([
                 nn.Conv1d(pre_channel, self.model_cfg.SHARED_FC[k], kernel_size=1, bias=False),
                 nn.BatchNorm1d(self.model_cfg.SHARED_FC[k]),
@@ -53,15 +53,15 @@ class PVRCNNHead(RoIHeadTemplate):
     def init_weights(self, weight_init='xavier'):
         if weight_init == 'kaiming':
             init_func = nn.init.kaiming_normal_
-        elif weight_init == 'xavier':
-            init_func = nn.init.xavier_normal_
         elif weight_init == 'normal':
             init_func = nn.init.normal_
+        elif weight_init == 'xavier':
+            init_func = nn.init.xavier_normal_
         else:
             raise NotImplementedError
 
         for m in self.modules():
-            if isinstance(m, nn.Conv2d) or isinstance(m, nn.Conv1d):
+            if isinstance(m, (nn.Conv2d, nn.Conv1d)):
                 if weight_init == 'normal':
                     init_func(m.weight, mean=0, std=0.001)
                 else:
@@ -136,9 +136,8 @@ class PVRCNNHead(RoIHeadTemplate):
         dense_idx = dense_idx.repeat(batch_size_rcnn, 1, 1).float()  # (B, 6x6x6, 3)
 
         local_roi_size = rois.view(batch_size_rcnn, -1)[:, 3:6]
-        roi_grid_points = (dense_idx + 0.5) / grid_size * local_roi_size.unsqueeze(dim=1) \
-                          - (local_roi_size.unsqueeze(dim=1) / 2)  # (B, 6x6x6, 3)
-        return roi_grid_points
+        return (dense_idx + 0.5) / grid_size * local_roi_size.unsqueeze(dim=1) \
+                          - (local_roi_size.unsqueeze(dim=1) / 2)
 
     def forward(self, batch_dict):
         """

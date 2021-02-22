@@ -72,14 +72,13 @@ class KittiDataset(DatasetTemplate):
             lidar_file = self.root_split_path / 'Raw_velodyne' / ('%s.bin' % idx)
             assert lidar_file.exists()
             points = np.fromfile(str(lidar_file), dtype=np.float32).reshape(-1, 4)
-            points = points[:, 0:3]
-            return points
         else:
             lidar_file = self.root_split_path / 'velodyne' / ('%s.npy' % idx)
             assert lidar_file.exists()
             points = np.load(str(lidar_file))
-            points = points[:, 0:3]
-            return points
+
+        points = points[:, 0:3]
+        return points
 
     def get_lidar_raw(self, idx):
         #lidar_file = self.root_split_path / 'velodyne_0.05' / ('%s.npy' % idx)
@@ -142,9 +141,7 @@ class KittiDataset(DatasetTemplate):
         val_flag_1 = np.logical_and(pts_img[:, 0] >= 0, pts_img[:, 0] < img_shape[1])
         val_flag_2 = np.logical_and(pts_img[:, 1] >= 0, pts_img[:, 1] < img_shape[0])
         val_flag_merge = np.logical_and(val_flag_1, val_flag_2)
-        pts_valid_flag = np.logical_and(val_flag_merge, pts_rect_depth >= 0)
-
-        return pts_valid_flag
+        return np.logical_and(val_flag_merge, pts_rect_depth >= 0)
 
     def get_infos(self, num_workers=4, has_label=True, count_inside_pts=True, sample_id_list=None):
         import concurrent.futures as futures
@@ -171,8 +168,7 @@ class KittiDataset(DatasetTemplate):
             if has_label:
                 obj_list = self.get_label(sample_idx)
                 #print('self.get_label(sample_idx)',sample_idx)
-                annotations = {}
-                annotations['name'] = np.array([obj.cls_type for obj in obj_list])
+                annotations = {'name': np.array([obj.cls_type for obj in obj_list])}
                 annotations['truncated'] = np.array([obj.truncation for obj in obj_list])
                 annotations['occluded'] = np.array([obj.occlusion for obj in obj_list])
                 annotations['alpha'] = np.array([obj.alpha for obj in obj_list])
@@ -290,14 +286,18 @@ class KittiDataset(DatasetTemplate):
 
         """
         def get_template_prediction(num_samples):
-            ret_dict = {
-                'name': np.zeros(num_samples), 'truncated': np.zeros(num_samples),
-                'occluded': np.zeros(num_samples), 'alpha': np.zeros(num_samples),
-                'bbox': np.zeros([num_samples, 4]), 'dimensions': np.zeros([num_samples, 3]),
-                'location': np.zeros([num_samples, 3]), 'rotation_y': np.zeros(num_samples),
-                'score': np.zeros(num_samples), 'boxes_lidar': np.zeros([num_samples, 7])
+            return {
+                'name': np.zeros(num_samples),
+                'truncated': np.zeros(num_samples),
+                'occluded': np.zeros(num_samples),
+                'alpha': np.zeros(num_samples),
+                'bbox': np.zeros([num_samples, 4]),
+                'dimensions': np.zeros([num_samples, 3]),
+                'location': np.zeros([num_samples, 3]),
+                'rotation_y': np.zeros(num_samples),
+                'score': np.zeros(num_samples),
+                'boxes_lidar': np.zeros([num_samples, 7]),
             }
-            return ret_dict
 
         def generate_single_sample_dict(batch_index, box_dict):
             pred_scores = box_dict['pred_scores'].cpu().numpy()
@@ -363,8 +363,7 @@ class KittiDataset(DatasetTemplate):
             print('Filter target by distance with ego')
             eval_gt_annos = []
             eval_det_annos = []
-            count = 0
-            for info in det_annos:
+            for count, info in enumerate(det_annos):
                 loc = info['location']
                 index_set = []
                 det = {}
@@ -383,10 +382,7 @@ class KittiDataset(DatasetTemplate):
                 if count % 100 == 0:
                     print('Detection After distance filtering ; the det num')
                     print('Original det num ', loc.shape[0], 'Now det num', len(index_set))
-                count += 1
-
-            count = 0
-            for info in self.kitti_infos:
+            for count, info in enumerate(self.kitti_infos):
                 info = info['annos']
                 loc = info['location']
                 index_set = []
@@ -402,8 +398,7 @@ class KittiDataset(DatasetTemplate):
                 if count % 100 == 0:
                     print('After distance filtering ; the gt num')
                     print('Original gt num ', loc.shape[0], 'Now gt num', len(index_set))
-                count += 1
-                # eval_gt_annos.append(copy.deepcopy(info))
+                        # eval_gt_annos.append(copy.deepcopy(info))
 
         ap_result_str, ap_dict = kitti_eval.get_official_eval_result(eval_gt_annos, eval_det_annos, class_names)
 

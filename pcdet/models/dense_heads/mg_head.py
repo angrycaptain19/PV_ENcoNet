@@ -68,7 +68,6 @@ class FeatureAdaption(nn.Module):
         self.conv_offset.bias.data.zero_()
 
     def init_weights(self):
-        pass 
         """normal_init(self.conv_offset, std=0.1)
         normal_init(self.conv_adaption, std=0.01)
         """
@@ -143,10 +142,9 @@ def smooth_l1_loss(pred, gt, sigma):
         in_value = 0.5 * (sigma * x) ** 2
         out_value = abs_x - 0.5 / sigma2
 
-        value = in_value * in_mask.type_as(in_value) + out_value * out_mask.type_as(
+        return in_value * in_mask.type_as(in_value) + out_value * out_mask.type_as(
             out_value
         )
-        return value
 
     value = _smooth_l1_loss(pred, gt, sigma)
     loss = value.mean(dim=1).sum()
@@ -292,7 +290,7 @@ class Head(nn.Module):
             classes, num_conv = self.pred_heads[head]
 
             fc = Sequential()
-            for i in range(num_conv-1):
+            for _ in range(num_conv-1):
                 fc.add(nn.Conv2d(num_input, head_conv,
                     kernel_size=3, stride=1, 
                     padding=3 // 2, bias=True))
@@ -327,20 +325,17 @@ class Head(nn.Module):
 
     def forward(self, x):
         ret_list = []
-        
+
         cls_preds = self.conv_cls(x).permute(0, 2, 3, 1).contiguous()
 
-        ret_dict = dict()
-        for head in self.pred_heads:
-            ret_dict[head] = self.__getattr__(head)(x)
-
+        ret_dict = {head: self.__getattr__(head)(x) for head in self.pred_heads}
         if 'vel' in ret_dict:
             box_preds = torch.cat((ret_dict['reg'], ret_dict['height'], ret_dict['dim'],
                                                     ret_dict['vel'], ret_dict['rot']), dim=1).permute(0, 2, 3, 1).contiguous()
         else:
             box_preds = torch.cat((ret_dict['reg'], ret_dict['height'], ret_dict['dim'],
                                                     ret_dict['rot']), dim=1).permute(0, 2, 3, 1).contiguous()
-                            
+
 
         ret_dict = {"box_preds": box_preds, "cls_preds": cls_preds}
         if self.use_dir:
@@ -421,7 +416,7 @@ class MultiGroupHead(nn.Module):
         if loss_aux:
             self.direction_offset = direction_offset
 
-        self.bev_only = True if mode == "bev" else False
+        self.bev_only = mode == "bev"
 
         num_clss = []
         num_preds = []
@@ -505,11 +500,7 @@ class MultiGroupHead(nn.Module):
 
     def forward(self, x):
         x = self.shared_conv(x)
-        ret_dicts = []
-        for task in self.tasks:
-            ret_dicts.append(task(x))
-
-        return ret_dicts
+        return [task(x) for task in self.tasks]
 
     def prepare_loss_weights(
         self,
@@ -565,9 +556,9 @@ class MultiGroupHead(nn.Module):
         batch_size_device = batch_anchors[0].shape[0]
 
         rets = []
-        for task_id, preds_dict in enumerate(preds_dicts):
-            losses = dict()
+        losses = {}
 
+        for task_id, preds_dict in enumerate(preds_dicts):
             num_class = self.num_classes[task_id]
 
             box_preds = preds_dict["box_preds"]
@@ -714,11 +705,7 @@ class MultiGroupHead(nn.Module):
             batch_box_preds = preds_dict["box_preds"]
             batch_cls_preds = preds_dict["cls_preds"]
 
-            if self.bev_only:
-                box_ndim = self.box_n_dim - 2
-            else:
-                box_ndim = self.box_n_dim
-
+            box_ndim = self.box_n_dim - 2 if self.bev_only else self.box_n_dim
             if kwargs.get("mode", False):
                 batch_box_preds_base = batch_box_preds.view(batch_size, -1, box_ndim)
                 batch_box_preds = batch_task_anchors.clone()
@@ -1014,7 +1001,19 @@ class MultiGroupHead(nn.Module):
 
             # finally generate predictions.
             # self.logger.info(f"selected boxes: {selected_boxes.shape}")
-            if selected_boxes.shape[0] != 0:
+            if selected_boxes.shape[0] == 0:
+                dtype = batch_reg_preds.dtype
+                device = batch_reg_preds.device
+                predictions_dict = {
+                    "box3d_lidar": torch.zeros([0, self.anchor_dim], dtype=dtype, device=device),
+                    "scores": torch.zeros([0], dtype=dtype, device=device),
+                    "label_preds": torch.zeros(
+                        [0], dtype=top_labels.dtype, device=device
+                    ),
+                    "metadata": meta,
+                }
+
+            else:
                 # self.logger.info(f"result not none~ Selected boxes: {selected_boxes.shape}")
                 box_preds = selected_boxes
                 scores = selected_scores
@@ -1048,18 +1047,6 @@ class MultiGroupHead(nn.Module):
                         "label_preds": label_preds,
                         "metadata": meta,
                     }
-            else:
-                dtype = batch_reg_preds.dtype
-                device = batch_reg_preds.device
-                predictions_dict = {
-                    "box3d_lidar": torch.zeros([0, self.anchor_dim], dtype=dtype, device=device),
-                    "scores": torch.zeros([0], dtype=dtype, device=device),
-                    "label_preds": torch.zeros(
-                        [0], dtype=top_labels.dtype, device=device
-                    ),
-                    "metadata": meta,
-                }
-
             predictions_dicts.append(predictions_dict)
 
         return predictions_dicts

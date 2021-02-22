@@ -13,8 +13,7 @@ def get_git_commit_number():
         return '0000000'
 
     cmd_out = subprocess.run(['git', 'rev-parse', 'HEAD'], stdout=subprocess.PIPE)
-    git_commit_number = cmd_out.stdout.decode('utf-8')[:7]
-    return git_commit_number
+    return cmd_out.stdout.decode('utf-8')[:7]
 
 
 script_version = get_git_commit_number()

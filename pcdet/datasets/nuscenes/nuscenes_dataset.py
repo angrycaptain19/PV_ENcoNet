@@ -49,7 +49,7 @@ class NuScenesDataset(DatasetTemplate):
                 if name in self.class_names:
                     cls_infos[name].append(info)
 
-        duplicated_samples = sum([len(v) for _, v in cls_infos.items()])
+        duplicated_samples = sum(len(v) for _, v in cls_infos.items())
         cls_dist = {k: len(v) / duplicated_samples for k, v in cls_infos.items()}
 
         sampled_infos = []
@@ -165,11 +165,12 @@ class NuScenesDataset(DatasetTemplate):
         Returns:
         """
         def get_template_prediction(num_samples):
-            ret_dict = {
-                'name': np.zeros(num_samples), 'score': np.zeros(num_samples),
-                'boxes_lidar': np.zeros([num_samples, 7]), 'pred_labels': np.zeros(num_samples)
+            return {
+                'name': np.zeros(num_samples),
+                'score': np.zeros(num_samples),
+                'boxes_lidar': np.zeros([num_samples, 7]),
+                'pred_labels': np.zeros(num_samples),
             }
-            return ret_dict
 
         def generate_single_sample_dict(box_dict):
             pred_scores = box_dict['pred_scores'].cpu().numpy()
@@ -304,15 +305,15 @@ def create_nuscenes_info(version, data_path, save_path, max_sweeps=10):
     save_path = save_path / version
 
     assert version in ['v1.0-trainval', 'v1.0-test', 'v1.0-mini']
-    if version == 'v1.0-trainval':
-        train_scenes = splits.train
-        val_scenes = splits.val
+    if version == 'v1.0-mini':
+        train_scenes = splits.mini_train
+        val_scenes = splits.mini_val
     elif version == 'v1.0-test':
         train_scenes = splits.test
         val_scenes = []
-    elif version == 'v1.0-mini':
-        train_scenes = splits.mini_train
-        val_scenes = splits.mini_val
+    elif version == 'v1.0-trainval':
+        train_scenes = splits.train
+        val_scenes = splits.val
     else:
         raise NotImplementedError
 
@@ -321,8 +322,16 @@ def create_nuscenes_info(version, data_path, save_path, max_sweeps=10):
     available_scene_names = [s['name'] for s in available_scenes]
     train_scenes = list(filter(lambda x: x in available_scene_names, train_scenes))
     val_scenes = list(filter(lambda x: x in available_scene_names, val_scenes))
-    train_scenes = set([available_scenes[available_scene_names.index(s)]['token'] for s in train_scenes])
-    val_scenes = set([available_scenes[available_scene_names.index(s)]['token'] for s in val_scenes])
+    train_scenes = {
+        available_scenes[available_scene_names.index(s)]['token']
+        for s in train_scenes
+    }
+
+    val_scenes = {
+        available_scenes[available_scene_names.index(s)]['token']
+        for s in val_scenes
+    }
+
 
     print('%s: train scene(%d), val scene(%d)' % (version, len(train_scenes), len(val_scenes)))
 

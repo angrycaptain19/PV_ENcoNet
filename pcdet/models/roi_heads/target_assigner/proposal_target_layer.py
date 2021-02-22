@@ -54,12 +54,15 @@ class ProposalTargetLayer(nn.Module):
         else:
             raise NotImplementedError
 
-        targets_dict = {'rois': batch_rois, 'gt_of_rois': batch_gt_of_rois, 'gt_iou_of_rois': batch_roi_ious,
-                        'roi_scores': batch_roi_scores, 'roi_labels': batch_roi_labels,
-                        'reg_valid_mask': reg_valid_mask,
-                        'rcnn_cls_labels': batch_cls_labels}
-
-        return targets_dict
+        return {
+            'rois': batch_rois,
+            'gt_of_rois': batch_gt_of_rois,
+            'gt_iou_of_rois': batch_roi_ious,
+            'roi_scores': batch_roi_scores,
+            'roi_labels': batch_roi_labels,
+            'reg_valid_mask': reg_valid_mask,
+            'rcnn_cls_labels': batch_cls_labels,
+        }
 
     def sample_rois_for_rcnn(self, batch_dict):
         """
@@ -158,8 +161,7 @@ class ProposalTargetLayer(nn.Module):
             print('ERROR: FG=%d, BG=%d' % (fg_num_rois, bg_num_rois))
             raise NotImplementedError
 
-        sampled_inds = torch.cat((fg_inds, bg_inds), dim=0)
-        return sampled_inds
+        return torch.cat((fg_inds, bg_inds), dim=0)
 
     @staticmethod
     def sample_bg_inds(hard_bg_inds, easy_bg_inds, bg_rois_per_this_image, hard_bg_ratio):

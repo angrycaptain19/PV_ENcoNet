@@ -59,18 +59,17 @@ class ATSSTargetAssigner(object):
             reg_weights_list.append(reg_weights)
 
         if single_set_of_anchor:
-            ret_dict = {
+            return {
                 'box_cls_labels': cls_labels_list[0],
                 'box_reg_targets': reg_targets_list[0],
                 'reg_weights': reg_weights_list[0]
             }
         else:
-            ret_dict = {
+            return {
                 'box_cls_labels': torch.cat(cls_labels_list, dim=1),
                 'box_reg_targets': torch.cat(reg_targets_list, dim=1),
                 'reg_weights': torch.cat(reg_weights_list, dim=1)
             }
-        return ret_dict
 
     def assign_targets_single(self, anchors, gt_boxes, gt_classes):
         """
